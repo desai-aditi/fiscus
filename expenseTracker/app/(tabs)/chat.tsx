@@ -16,8 +16,11 @@ import {
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Animated, { FadeOut, Layout, SlideInLeft, SlideInRight, SlideInUp, SlideOutDown } from 'react-native-reanimated';
+import dotenv from 'dotenv';
+dotenv.config();
+const apiKey = process.env.GOOGLE_API_KEY || '';
 
-const genAI = new GoogleGenerativeAI('AIzaSyC0YXx41Yy6CJqVc3wnMqoVffBzLfsZbi4');
+const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 interface ChatMessage {
