@@ -5,7 +5,8 @@ import Typo from '@/components/Typo';
 import { expenseCategories } from '@/constants/data';
 import { colors, radius, spacingX, spacingY } from '@/constants/theme';
 import { useAuth } from '@/contexts/authContext';
-import { createOrUpdateTransaction, deleteTransaction } from '@/services/transactionService';
+import { useTransactions } from '@/hooks/useTransactions';
+// import { createOrUpdateTransaction, deleteTransaction } from '@/services/transactionService';
 import { TransactionType } from '@/types';
 import { scale, verticalScale } from '@/utils/styling';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
@@ -18,20 +19,21 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import dotenv from 'dotenv';
-dotenv.config();
-const apiKey = process.env.GEMINI_API_KEY;
 
 export default function TransactionModal() {
   const { user, updateUserData } = useAuth();
+
+  const { addTransaction, updateTransaction, deleteTransaction } = useTransactions(user.uid);
+
   const [transaction, setTransaction] = useState<TransactionType>({
     amount: 0,
     description: "",
     category: "",
     type: 'expense',
-    date: new Date(),
-    image: null
+    date: new Date().toISOString(),
+    uid: user?.uid
   });
+
   // Ensure type matches category selection
   useEffect(() => {
     if (transaction.category === "Income") {
@@ -40,6 +42,7 @@ export default function TransactionModal() {
       setTransaction(prev => ({ ...prev, type: "expense" }));
     }
   }, [transaction.category]);
+
   const [amountInput, setAmountInput] = useState("0");
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -52,21 +55,21 @@ export default function TransactionModal() {
     category?: string;
     date?: string;
     description?: string;
-    uid?: string;
+    uid: string;
   }
   const oldTransaction = useLocalSearchParams() as paramType;
 
   useEffect(() => {
     if (oldTransaction?.id) {
       setTransaction({
-        type: oldTransaction?.type ?? "expense",
+        type: oldTransaction?.type === "income" ? "income" : "expense",
         amount: Number(oldTransaction?.amount),
         description: oldTransaction?.description || "",
         id: oldTransaction?.id,
         category: oldTransaction?.category || "",
         date: oldTransaction.date && !isNaN(new Date(oldTransaction.date).getTime())
-          ? new Date(oldTransaction.date)
-          : new Date(),
+          ? new Date(oldTransaction.date).toISOString()
+          : new Date().toISOString(),
         uid: oldTransaction?.uid
       });
       setAmountInput(oldTransaction?.amount || "0");
@@ -74,8 +77,8 @@ export default function TransactionModal() {
       const parsedDate = new Date(oldTransaction.date);
       setTransaction(prev => ({
         ...prev,
-        type: oldTransaction.type as 'income' | 'expense',
-        date: isNaN(parsedDate.getTime()) ? new Date() : parsedDate, // ✅ Only set if valid
+        type: oldTransaction.type === "income" ? "income" : "expense",
+        date: isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString(), // ✅ Only set if valid
       }));
       setAmountInput("0");
     }
@@ -96,40 +99,49 @@ export default function TransactionModal() {
       return;
     }
 
-    let transactionData: TransactionType = {
-      amount,
-      description,
-      category,
-      type,
-      date,
-      uid: user?.uid
-    }
-
-    // if update transaction
-    if(oldTransaction?.id) transactionData.id = oldTransaction.id;
-
-    // create/update transaction
     setLoading(true);
-    const res = await createOrUpdateTransaction(transactionData);
 
-    setLoading(false);
-    if(res.success){
+    try {
+      if (oldTransaction?.id) {
+        // Update existing transaction
+        await updateTransaction(oldTransaction.id, {
+          amount,
+          description,
+          category,
+          type,
+          date
+        });
+      } else {
+        // Add new transaction
+        await addTransaction({
+          amount,
+          description,
+          category,
+          type,
+          date,
+          uid: user?.uid || ''
+        });
+      }
       router.back();
-    } else {
-      Alert.alert("Transaction", res.msg);
+    } catch (error) {
+      console.log("Error saving transaction:", error);
+      Alert.alert("Transaction", "Failed to save transaction");
+    } finally {
+      setLoading(false);
     }
   }
 
   const onDelete = async () => {
-    if(!oldTransaction?.id) return;
-
-    const res = await deleteTransaction(oldTransaction?.id);
-    setLoading(false);
-
-    if (res.success) {
+    setLoading(true);
+    
+    try {
+      await deleteTransaction(oldTransaction?.id || '');
       router.back();
-    } else {
-      Alert.alert("Transaction", res.msg)
+    } catch (error) {
+      console.log("Error deleting transaction:", error);
+      Alert.alert("Transaction", "Failed to delete transaction");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -202,82 +214,82 @@ export default function TransactionModal() {
     );
   };
 
-  const onScan = async () => {
-    try {
-      setLoading(true);
-    const genAI = new GoogleGenAI({apiKey: apiKey});
+  // const onScan = async () => {
+  //   try {
+  //     setLoading(true);
+  //   const genAI = new GoogleGenAI({apiKey: 'AIzaSyC0YXx41Yy6CJqVc3wnMqoVffBzLfsZbi4'});
 
-    // launch image picker
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-    });
+  //   // launch image picker
+  //   let result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ['images'],
+  //   });
 
-    const fileUri = FileSystem.cacheDirectory + 'temp.jpg';
+  //   const fileUri = FileSystem.cacheDirectory + 'temp.jpg';
 
-    if (!result.canceled) {
-      await FileSystem.downloadAsync(result.assets[0].uri, fileUri);
-    }
+  //   if (!result.canceled) {
+  //     await FileSystem.downloadAsync(result.assets[0].uri, fileUri);
+  //   }
 
-    // Read the file as base64
-    const base64ImageData = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+  //   // Read the file as base64
+  //   const base64ImageData = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
 
-    // prompt model to extract information from the image
-    // Generate content using structured output
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: base64ImageData,
-          },
-        },
-        {
-          text: "You are part of an expense tracker app. Extract and return total amount, category, and purchase date from this receipt image. Convert the date from whatever format it is to ISO 8601 standard format. Generate a short, one-sentence, accurate description of the transaction.",
-        }
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            amount: { type: Type.NUMBER },
-            category: {
-              type: Type.STRING,
-              enum: [
-                "income", "groceries", "rent", "utilities", "transportation",
-                "entertainment", "dining", "health", "savings", "clothing", "personal"
-              ]
-            },
-            date: { type: Type.STRING }, // Optionally format: Type.DATE
-            description: { type: Type.STRING },
-          },
-          required: [], // optional: can add ['amount', 'category', 'date'] if strict
-        },
-      }
-    });
+  //   // prompt model to extract information from the image
+  //   // Generate content using structured output
+  //   const response = await genAI.models.generateContent({
+  //     model: "gemini-2.5-flash",
+  //     contents: [
+  //       {
+  //         inlineData: {
+  //           mimeType: 'image/jpeg',
+  //           data: base64ImageData,
+  //         },
+  //       },
+  //       {
+  //         text: "You are part of an expense tracker app. Extract and return total amount, category, and purchase date from this receipt image. Convert the date from whatever format it is to ISO 8601 standard format. Generate a short, one-sentence, accurate description of the transaction.",
+  //       }
+  //     ],
+  //     config: {
+  //       responseMimeType: "application/json",
+  //       responseSchema: {
+  //         type: Type.OBJECT,
+  //         properties: {
+  //           amount: { type: Type.NUMBER },
+  //           category: {
+  //             type: Type.STRING,
+  //             enum: [
+  //               "income", "groceries", "rent", "utilities", "transportation",
+  //               "entertainment", "dining", "health", "savings", "clothing", "personal"
+  //             ]
+  //           },
+  //           date: { type: Type.STRING }, // Optionally format: Type.DATE
+  //           description: { type: Type.STRING },
+  //         },
+  //         required: [], // optional: can add ['amount', 'category', 'date'] if strict
+  //       },
+  //     }
+  //   });
 
-    const data = response.text ? JSON.parse(response.text) : {};
-    console.log("Extracted data:", data);
+  //   const data = response.text ? JSON.parse(response.text) : {};
+  //   console.log("Extracted data:", data);
 
-    setTransaction(prev => ({
-      ...prev,
-      amount: typeof data.amount === 'number' ? data.amount : prev.amount,
-      category: data.category ?? prev.category,
-      date: typeof data.date === 'string' && !isNaN(Date.parse(data.date))
-        ? new Date(data.date)
-        : prev.date,
-      description: data.description || prev.description,
-    }));
-    setAmountInput(
-      typeof data.amount === 'number' ? data.amount.toString() : prev.amount.toString()
-    );
-    } catch (error) {
-      console.error("Error during receipt scan:", error);
-    } finally{
-      setLoading(false);
-    }
-  }
+  //   setTransaction(prev => ({
+  //     ...prev,
+  //     amount: typeof data.amount === 'number' ? data.amount : prev.amount,
+  //     category: data.category ?? prev.category,
+  //     date: typeof data.date === 'string' && !isNaN(Date.parse(data.date))
+  //       ? new Date(data.date)
+  //       : prev.date,
+  //     description: data.description || prev.description,
+  //   }));
+  //   setAmountInput(
+  //     typeof data.amount === 'number' ? data.amount.toString() : amountInput
+  //   );
+  //   } catch (error) {
+  //     console.error("Error during receipt scan:", error);
+  //   } finally{
+  //     setLoading(false);
+  //   }
+  // }
 
   return (
    <ModalWrapper bg={colors.primaryDark}>
@@ -355,20 +367,20 @@ export default function TransactionModal() {
               >
                 <FontAwesome5 name="calendar" size={16} color={colors.white} style={{marginRight: 8}} />
                 <Typo size={14} color={colors.white}>
-                  {format(transaction.date as Date, 'MMM d, yyyy')}
+                  {format(new Date(transaction.date), 'MMM d, yyyy')}
                 </Typo>
               </Pressable>
               {showDatePicker && (
                 <View style={styles.datePickerPopover}>
                   <DateTimePicker
                     themeVariant='dark'
-                    value={transaction.date as Date}
+                    value={new Date(transaction.date)}
                     textColor={colors.white}
                     mode='date'
                     display='default'
                     onChange={(event, selectedDate) => {
                       if (event.type === 'set' && selectedDate) {
-                        setTransaction({...transaction, date: selectedDate});
+                        setTransaction({...transaction, date: selectedDate.toISOString()});
                       }
                     }}
                   />

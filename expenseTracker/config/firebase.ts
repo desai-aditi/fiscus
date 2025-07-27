@@ -3,13 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from "firebase/app";
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from "firebase/firestore";
-import dotenv from 'dotenv';
-dotenv.config();
-const apiKey = process.env.FIREBASE_API_KEY;
+// import dotenv from 'dotenv';
+// dotenv.config();
+// const apiKey = process.env.FIREBASE_API_KEY;
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: apiKey,
+  apiKey: 'AIzaSyCCawCpgTa4ZoKUQq3Q4CYrDgqLITOSfNQ',
   authDomain: "expensetracker-50a69.firebaseapp.com",
   projectId: "expensetracker-50a69",
   storageBucket: "expensetracker-50a69.firebasestorage.app",

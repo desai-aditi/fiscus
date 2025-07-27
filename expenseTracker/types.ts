@@ -66,14 +66,12 @@ export type BackButtonProps = {
 
 export type TransactionType = {
   id?: string;
-  type: string;
+  type: 'expense' | 'income';
   amount: number;
-  category?: string;
+  category: string;
   date: Date | Timestamp | string;
   description?: string;
-  image?: any;
-  uid?: string;
-  // walletId: string;
+  uid: string;
 };
 
 export type CategoryType = {
@@ -87,7 +85,7 @@ export type ExpenseCategoriesType = {
 };
 
 export type TransactionListType = {
-  data: TransactionType[];
+  data: [];
   title?: string;
   loading?: boolean;
   emptyListMessage?: string;
@@ -125,11 +123,11 @@ export type ImageUploadProps = {
 };
 
 export type UserType = {
-  uid?: string;
-  email?: string | null;
+  uid: string;
+  email: string | null;
   name: string | null;
-  image?: any;
-} | null;
+  image: any;
+};
 
 export type UserDataType = {
   name: string;

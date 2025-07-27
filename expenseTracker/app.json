@@ -44,7 +44,9 @@
         {
           "photosPermission": "The app accesses your photos to help you change your profile picture."
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

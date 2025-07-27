@@ -1,24 +1,30 @@
 import { expenseCategories, incomeCategory } from '@/constants/data';
 import { colors, radius, spacingX, spacingY } from '@/constants/theme';
-import { TransactionItemProps, TransactionListType, TransactionType } from '@/types';
+import { TransactionItemProps, TransactionType } from '@/types';
 import { verticalScale } from '@/utils/styling';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { useRouter } from 'expo-router';
-import { Timestamp } from 'firebase/firestore';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import Loading from './Loading';
 import Typo from './Typo';
 
+type TransactionListProps = {
+  groupedTransactions: Record<string, TransactionType[]>;
+  title?: string;
+  loading?: boolean;
+  emptyListMessage?: string;
+};
+
 const TransactionList = ({
-  data,
+  groupedTransactions,
   title,
   loading,
   emptyListMessage
-}: TransactionListType) => {
+}: TransactionListProps) => {
   const router = useRouter();
-  
+
   const handleClick = (item: TransactionType) => {
     router.push({
       pathname: "/(modals)/transactionModal",
@@ -27,25 +33,15 @@ const TransactionList = ({
         type: item?.type,
         amount: item?.amount?.toString(),
         category: item?.category,
-        date: (item.date as Timestamp)?.toDate()?.toISOString(),
+        date: item?.date,
         description: item?.description,
         uid: item?.uid
       }
-    })
+    });
   };
 
-  // Group transactions by date
-  const grouped = data?.reduce((acc: Record<string, TransactionType[]>, item) => {
-    const dateObj = (item.date as Timestamp).toDate();
-    let label = format(dateObj, "EEE, MMMM d");
-    if (isToday(dateObj)) label = "Today";
-    else if (isYesterday(dateObj)) label = "Yesterday";
-    if (!acc[label]) acc[label] = [];
-    acc[label].push(item);
-    return acc;
-  }, {});
-
-  const sortedDateKeys = Object.keys(grouped || {});
+  // Sort date keys descending (latest first)
+  const sortedDateKeys = Object.keys(groupedTransactions || {}).sort((a, b) => b.localeCompare(a));
 
   return (
     <View style={styles.container}>
@@ -53,21 +49,28 @@ const TransactionList = ({
         <Typo color={colors.text} fontWeight="600" size={18}>{title}</Typo>
       )}
       {sortedDateKeys.length > 0 ? (
-        sortedDateKeys.map((groupLabel, sectionIndex) => (
-          <View key={groupLabel} style={styles.section}>
-            <Typo size={16} fontWeight="600" style={styles.dateHeading}>{groupLabel}</Typo>
-            <View style={styles.transactionGroup}>
-              {grouped[groupLabel].map((item, index) => (
-                <TransactionItem
-                  key={item.id}
-                  item={item}
-                  index={sectionIndex * 100 + index}
-                  handleClick={handleClick}
-                />
-              ))}
+        sortedDateKeys.map((groupLabel, sectionIndex) => {
+          const dateObj = parseISO(groupLabel);
+          let label = format(dateObj, "EEE, MMMM d");
+          if (isToday(dateObj)) label = "Today";
+          else if (isYesterday(dateObj)) label = "Yesterday";
+
+          return (
+            <View key={groupLabel} style={styles.section}>
+              <Typo size={16} fontWeight="600" style={styles.dateHeading}>{label}</Typo>
+              <View style={styles.transactionGroup}>
+                {groupedTransactions[groupLabel].map((item, index) => (
+                  <TransactionItem
+                    key={item.id}
+                    item={item}
+                    index={sectionIndex * 100 + index}
+                    handleClick={handleClick}
+                  />
+                ))}
+              </View>
             </View>
-          </View>
-        ))
+          );
+        })
       ) : (
         !loading && (
           <View style={styles.emptyState}>
@@ -88,10 +91,8 @@ const TransactionList = ({
 
 const TransactionItem = ({ item, index, handleClick }: TransactionItemProps) => {
   const category = item?.type === 'income' ? incomeCategory : expenseCategories[item.category!];
-  const date = (item?.date as Timestamp)?.toDate()?.toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "short",
-  });
+  const dateObj = new Date(item.date);
+  const date = dateObj.toLocaleString('en-US', { month: 'long', day: 'numeric' });
 
   return (
     <TouchableOpacity style={styles.row} onPress={() => handleClick(item)}>

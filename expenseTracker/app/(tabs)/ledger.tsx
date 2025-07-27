@@ -5,6 +5,8 @@ import Typo from '@/components/Typo';
 import { colors, radius, spacingX, spacingY } from '@/constants/theme';
 import { useAuth } from '@/contexts/authContext';
 import useFetchData from '@/hooks/useFetchData';
+import { useTransactions } from '@/hooks/useTransactions';
+import { TransactionService } from '@/services/transactionService';
 import { TransactionType } from '@/types';
 import { verticalScale } from '@/utils/styling';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -14,34 +16,29 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function Ledger() {
   const { user } = useAuth();
+  const {loading, groupedTransactions} = useTransactions(user.uid);
+  // console.log('Transactions:', transactions, 'Grouped:', groupedTransactions);
 
   // Search state and toggle for input box
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
-  const constraints = [
-    where('uid', '==', user?.uid),
-    orderBy('date', 'desc'),
-  ];
-
-  const { data: recentTransactions, loading } = useFetchData<TransactionType>(
-    'transactions',
-    constraints
-  );
+  const allTransactions = Object.values(groupedTransactions || {}).flat();
 
   // Filter transactions based on search query (category, type, description)
-  const filteredTransactions = recentTransactions?.filter((item) => {
-    if (search.length > 1) {
+  const filteredTransactions = search.length > 0
+  ? allTransactions.filter((item) => {
       const lowerSearch = search.toLowerCase();
       return (
         item.category?.toLowerCase().includes(lowerSearch) ||
         item.type?.toLowerCase().includes(lowerSearch) ||
-        item.description?.toLowerCase().includes(lowerSearch) || 
+        item.description?.toLowerCase().includes(lowerSearch) ||
         item.amount?.toString().includes(lowerSearch)
       );
-    }
-    return true;
-  });
+    })
+  : allTransactions;
+
+  const filteredGroupedTransactions = TransactionService.groupTransactionsByDate(filteredTransactions);
 
   return (
     <ScreenWrapper barStyle='dark-content'>
@@ -83,10 +80,13 @@ export default function Ledger() {
         </View>
 
         <View style={styles.listContainer}>
-          <TransactionList
-            data={filteredTransactions}
+          {/* {filteredTransactions.map((transaction, index) => (
+            <Typo key={transaction.id || index}>{transaction.amount}</Typo>
+          ))} */}
+         <TransactionList
+            groupedTransactions={filteredGroupedTransactions}
             loading={loading}
-            emptyListMessage="No transactions found"
+            emptyListMessage="No transactions found."
           />
         </View>
       </ScrollView>
