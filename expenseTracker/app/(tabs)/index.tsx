@@ -7,6 +7,7 @@ import StatCard from '@/components/StatCard';
 import Typo from '@/components/Typo';
 import { colors, radius, spacingX, spacingY } from '@/constants/theme';
 import { useAuth } from '@/contexts/authContext';
+import { useTransactions } from '@/hooks/useTransactions';
 import { fetchTotals, fetchTransactions } from '@/services/transactionService';
 import { verticalScale } from '@/utils/styling';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,38 +17,23 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 export default function Home() {
   const { user } = useAuth();
-  const router = useRouter();
 
   const [displayRate, setDisplayRate] = useState<string>('0.0');
   const [savingsRate, setSavingsRate] = useState<number>(0);
   const [maxExpense, setMaxExpense] = useState<string>('0.0');
 
-  useEffect(() => {
-    if (user?.uid) {
-      fetchTotals(user.uid).then((response) => {
-        if (response.success) {
-          const {totals} = response.data;
-          const savings = totals?.income - totals?.expenses;
-          const rate = totals?.income > 0 ? (savings / totals?.income) * 100 : 0;
-          setSavingsRate(rate);
-          setDisplayRate(rate.toFixed(1));
-        }
-      });
-    }
-  }, [user?.uid]);
+  const { loading, error, totals, transactions} = useTransactions(user.uid);
 
   useEffect(() => {
-    if (user?.uid) {
-      fetchTransactions(user.uid).then((response) => {
-        if (response.success) {
-          const { transactions } = response.data;
-          // where type is expense and amount is largest
-          const maxExpense = Math.max(...transactions.filter(tx => tx.type === 'expense').map(tx => tx.amount), 0);
-          setMaxExpense(maxExpense.toFixed(1));
-        }
-      })
-    }
-  })
+    const savings = (totals?.income ?? 0) - (totals?.expenses ?? 0);
+    const rate = (totals?.income ?? 0) > 0 ? (savings / (totals?.income ?? 0)) * 100 : 0;
+    setSavingsRate(rate);
+    setDisplayRate(rate.toFixed(1));
+
+    setMaxExpense(
+      Math.max(...transactions.filter(tx => tx.type === 'expense').map(tx => tx.amount), 0).toFixed(1)
+    );
+  }, [totals, transactions]);
 
   return (
     <ScreenWrapper>
@@ -79,7 +65,7 @@ export default function Home() {
           </View>
 
           {/* Stats Cards Section */}
-          <View>
+          {/* <View>
             <Typo size={verticalScale(18)} fontWeight="600" color={colors.text} style={styles.sectionTitle}>
               Financial Overview
             </Typo>
@@ -99,29 +85,27 @@ export default function Home() {
                 icon='🤑'
               />
             </View>
-          </View>
+          </View> */}
 
           {/* Charts Section */}
-          <View>
+          {/* <View>
             <Typo size={verticalScale(18)} fontWeight="600" color={colors.text} style={styles.sectionTitle}>
               Analytics
             </Typo>
             
-            {/* Income vs Expense Chart */}
             <View style={styles.chartWrapper}>
               <IncomeExpenseChart/>
             </View>
 
-            {/* Expense Categories Pie Chart */}
             <View>
               <ExpenseCategoryPieChart />
             </View>
-          </View>
+          </View> */}
 
           {/* Daily Tip Section */}
-          <View style={styles.tipSection}>
+          {/* <View style={styles.tipSection}>
             <DailyFinancialTip />
-          </View>
+          </View> */}
 
           {/* Bottom spacing for better scroll experience */}
           <View style={styles.bottomSpacer} />

@@ -1,0 +1,28 @@
+from fastapi import APIRouter
+# from firebase_admin import firestore
+# import json
+
+# db = firestore.client()
+router = APIRouter()
+
+@router.get("/")
+async def read_root():
+    return {"message": "Welcome to the Fiscus API"}
+
+@router.get("/transactions")
+async def get_transactions():
+    pass
+    # transactions_ref = db.collection('transactions')
+    # transactions = transactions_ref.get()
+    # res = []
+    # for transaction in transactions:
+    #     res.append(transaction.to_dict())
+    # return res
+
+@router.post("/transactions/{code}")
+async def create_transaction(code, body):
+    pass
+    # json_data = json.loads(body)
+    # city_ref = db.collection('transactions').document(code)
+    # city_ref.set(json_data)
+    # return {"message": "Transaction created successfully", "code": code}

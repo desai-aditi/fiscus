@@ -2,6 +2,7 @@ import Typo from '@/components/Typo';
 import { colors, spacingX, spacingY } from '@/constants/theme';
 import { useAuth } from '@/contexts/authContext';
 import useFetchData from '@/hooks/useFetchData';
+import { useTransactions } from '@/hooks/useTransactions';
 import { TransactionType } from '@/types';
 import { scale, verticalScale } from '@/utils/styling';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -10,42 +11,16 @@ import { where } from 'firebase/firestore';
 import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-interface Totals {
-  balance: number;
-  income: number;
-  expenses: number;
-}
-
 export default function HomeCard() {
   const {user} = useAuth();
-
-  const {data: transactions, error, loading} = useFetchData<TransactionType>("transactions", [
-    where("uid", "==", user?.uid),
-  ]);
+  
+  const {loading, error, totals} = useTransactions(user.uid);
 
   useEffect(() => {
     if (error) {
       console.error("Error fetching transactions:", error);
     }
   }, [error]);
-
-  const totals:Totals = useMemo(() => {
-    
-    if (!transactions || transactions.length === 0) {
-      return { balance: 0, income: 0, expenses: 0 };
-    }
-
-    return transactions.reduce((acc: Totals, item: TransactionType) => {
-      const amount = Number(item.amount) || 0;
-      if (item.type === 'income') {
-        acc.income += amount;
-      } else if (item.type === 'expense') {
-        acc.expenses += amount;
-      }
-    acc.balance = acc.income - acc.expenses;
-      return acc;
-    }, { balance: 0, income: 0, expenses: 0 });
-  }, [transactions]);
 
   return (
     <View style={styles.card}>

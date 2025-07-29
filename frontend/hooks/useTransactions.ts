@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TotalsType, TransactionType } from '@/types';
+import { TransactionType } from '@/types/transaction';
 import { TransactionService } from '@/services/transactionService';
 
 
 export const useTransactions = (uid: string) => {
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
-  const [totals, setTotals] = useState<TotalsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,26 +58,8 @@ export const useTransactions = (uid: string) => {
 
   const groupedTransactions = TransactionService.groupTransactionsByDate(transactions);
 
-  const loadTotals = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await TransactionService.getTotals(uid);
-      setTotals(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transactions');
-    } finally {
-      setLoading(false);
-    }
-  }, [uid]);
-
-  useEffect(() => {
-    loadTotals();
-  }, []);
-
   return {
     transactions,
-    totals,
     groupedTransactions,
     loading,
     error,

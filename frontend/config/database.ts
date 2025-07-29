@@ -24,17 +24,14 @@ export const initDatabase = async () => {
     CREATE TABLE IF NOT EXISTS sync_queue (
       id TEXT PRIMARY KEY,
       operation TEXT NOT NULL,
-      table_name TEXT NOT NULL, 
       document_id TEXT NOT NULL,
-      data TEXT,
+      data TEXT NOT NULL,
       timestamp INTEGER NOT NULL,
       status TEXT DEFAULT 'PENDING',
       retry_count INTEGER DEFAULT 0,
       last_error TEXT,
       created_at INTEGER NOT NULL
     );
-
-    UPDATE transactions SET sync_status = 'LOCAL_ONLY' WHERE sync_status IS NULL;
   `);
   
 };

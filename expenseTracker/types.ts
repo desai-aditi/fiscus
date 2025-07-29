@@ -64,6 +64,8 @@ export type BackButtonProps = {
   iconSize?: number;
 };
 
+
+
 export type TransactionType = {
   id?: string;
   type: 'expense' | 'income';
@@ -126,7 +128,6 @@ export type UserType = {
   uid: string;
   email: string | null;
   name: string | null;
-  image: any;
 };
 
 export type UserDataType = {
@@ -166,4 +167,10 @@ export type WalletType = {
   image: any;
   uid?: string;
   created?: Date;
+};
+
+export type TotalsType = {
+  balance: number;
+  income: number;
+  expenses: number;
 };
