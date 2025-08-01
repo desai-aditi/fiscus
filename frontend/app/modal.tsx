@@ -18,6 +18,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { Transaction } from '@/types/transaction';
 import { CATEGORIES } from '@/constants/categories';
 import { CategoryType } from '@/types/categories';
+import { useAuth } from '@/contexts/authContext';
 
 // Prepare data for the dropdown
 const incomeCategory: CategoryType = { label: 'Income', value: 'Income', icon: 'dollar-sign', bgColor: '#16A34A' };
@@ -33,6 +34,7 @@ const ActionButton = ({ title, onPress, color = '#007AFF', disabled = false }) =
 
 export default function TransactionModalScreen() {
   const router = useRouter();
+  const { user } = useAuth(); // Get the current user from context
   const params = useLocalSearchParams<{ transactionString?: string }>();
 
   // Determine if we are in "edit" mode and memoize existingTransaction
@@ -43,7 +45,7 @@ export default function TransactionModalScreen() {
   const isEditMode = !!existingTransaction;
 
   // Get data mutation functions from our hook
-  const { addTransaction, updateTransaction, deleteTransaction } = useTransactions(process.env.USER_UID);
+  const { addTransaction, updateTransaction, deleteTransaction } = useTransactions(user.uid);
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -92,21 +94,22 @@ export default function TransactionModalScreen() {
       category: category!,
       date: date.toISOString(),
       description,
-      uid: process.env.USER_UID, // Simplified: Using a placeholder UID
+      uid: user.uid,
     };
 
     try {
-        if (isEditMode && existingTransaction) {
-            await updateTransaction(existingTransaction.id, transactionData);
-        } else {
-            await addTransaction(transactionData);
-        }
-        router.back();
+      if (isEditMode && existingTransaction) {
+        await updateTransaction(existingTransaction.id, transactionData);
+      } else {
+        console.log("Adding new transaction:");
+        await addTransaction({...transactionData, sync_status: 'LOCAL_ONLY'});
+      }
+      router.back();
     } catch (error) {
-        console.error("Failed to save transaction:", error);
-        Alert.alert('Error', 'Could not save the transaction. Please try again.');
+      console.error("Failed to save transaction:", error);
+      Alert.alert('Error', 'Could not save the transaction. Please try again.');
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 

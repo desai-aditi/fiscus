@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TransactionType } from '@/types/transaction';
+import { Transaction } from '@/types/transaction';
 import { TransactionService } from '@/services/transactionService';
-
+import { syncManager } from '@/services/syncManager';
+import { useAuth } from '@/contexts/authContext';
 
 export const useTransactions = (uid: string) => {
-  const [transactions, setTransactions] = useState<TransactionType[]>([]);
+  const { token: authToken } = useAuth();
+  
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sync, setSync] = useState(false);
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -25,9 +29,18 @@ export const useTransactions = (uid: string) => {
     loadTransactions();
   }, []);
 
-  const addTransaction = async (transaction: Omit<TransactionType, 'id'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     try {
       const id = await TransactionService.addTransaction(transaction);
+
+      try {
+        console.log("Syncing transaction:", transaction);
+        console.log('auth token:', authToken);
+        await syncManager.syncTransaction('POST', {...transaction, id}, authToken);
+      } catch (syncError) {
+        console.error('Sync failed:', syncError);
+      }
+
       await loadTransactions(); // Refresh the list
       return id;
     } catch (err) {
@@ -36,7 +49,7 @@ export const useTransactions = (uid: string) => {
     }
   };
 
-  const updateTransaction = async (id: string, updates: Partial<Omit<TransactionType, 'id' | 'uid'>>) => {
+  const updateTransaction = async (id: string, updates: Partial<Omit<Transaction, 'id' | 'uid'>>) => {
     try {
       await TransactionService.updateTransaction(id, updates);
       await loadTransactions(); // Refresh the list
@@ -56,11 +69,11 @@ export const useTransactions = (uid: string) => {
     }
   };
 
-  const groupedTransactions = TransactionService.groupTransactionsByDate(transactions);
+  // const groupedTransactions = TransactionService.groupTransactionsByDate(transactions);
 
   return {
     transactions,
-    groupedTransactions,
+    // groupedTransactions,
     loading,
     error,
     addTransaction,

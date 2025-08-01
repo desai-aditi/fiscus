@@ -23,3 +23,5 @@ __pycache__/
 .git/
 devcontainer/
 service-account.json
+
+frontend/ios/

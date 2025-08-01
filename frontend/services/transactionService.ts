@@ -1,18 +1,19 @@
-import { TransactionType } from '@/types/transaction';
+import { Transaction } from '@/types/transaction';
 import {db} from '../config/database';
+import { SyncStatus } from '@/types/sync';
 
 export class TransactionService {
     
     // fetch transactions
-    static async getAllTransactions(uid: string): Promise<TransactionType[]> {
-        const result = await db.getAllAsync<TransactionType>(
+    static async getAllTransactions(uid: string): Promise<Transaction[]> {
+        const result = await db.getAllAsync<Transaction>(
             'SELECT * FROM transactions WHERE uid = ? ORDER BY date DESC', [uid]
         );
         return result;
     }
 
     // add transaction
-    static async addTransaction(transaction: Omit<TransactionType, 'id'>): Promise<string> {
+    static async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<string> {
         const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`  ;
 
         await db.runAsync(
@@ -23,7 +24,7 @@ export class TransactionService {
     }
 
     // update transaction
-    static async updateTransaction(id: string, updates: Partial<Omit<TransactionType, 'id' | 'uid'>>): Promise<void>{
+    static async updateTransaction(id: string, updates: Partial<Omit<Transaction, 'id' | 'uid'>>): Promise<void>{
         const fields: string[] = [];
         const values: any[] = [];
         
@@ -49,15 +50,11 @@ export class TransactionService {
         await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
     }
 
-    // group transactions by date
-    static groupTransactionsByDate(transactions: TransactionType[]): Record<string, TransactionType[]> {
-        return transactions.reduce((groups, transaction) => {
-        const dateKey = transaction.date.split('T')[0]; // Get just the date part
-        if (!groups[dateKey]) {
-            groups[dateKey] = [];
-        }
-        groups[dateKey].push(transaction);
-        return groups;
-        }, {} as Record<string, TransactionType[]>);
+    // update sync status
+    static async updateSyncStatus(id: string, status: SyncStatus): Promise<void> {
+        await db.runAsync(
+            'UPDATE transactions SET sync_status = ? WHERE id = ?',
+            [status, id]
+        );
     }
 }

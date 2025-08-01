@@ -28,9 +28,8 @@ export const initDatabase = async () => {
       data TEXT NOT NULL,
       timestamp INTEGER NOT NULL,
       status TEXT DEFAULT 'PENDING',
-      retry_count INTEGER DEFAULT 0,
-      last_error TEXT,
-      created_at INTEGER NOT NULL
+      uid TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
   

@@ -1,14 +1,48 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
+import { useTransactions } from '@/hooks/useTransactions';
+import { Link, router } from 'expo-router';
+import { Transaction } from '@/types/transaction';
+import { useAuth } from '@/contexts/authContext';
 
 export default function TabTwoScreen() {
+  const { user } = useAuth();
+
+  const {loading, error, transactions} = useTransactions(user.uid);
+
+  const TransactionListItem = ({ item }: { item: Transaction }) => (
+  <Link 
+    href={{ pathname: "/modal", params: { transactionString: JSON.stringify(item) } }} 
+    asChild
+  >
+    <TouchableOpacity>
+      <View >
+        <Text>{item.category}</Text>
+        <Text>{item.description || 'No description'}</Text>
+        <Text>Status: {item.sync_status}</Text>
+      </View>
+      <Text style={[{ color: item.type === 'income' ? '#34C759' : '#FF3B30' }]}>
+        {item.type === 'income' ? '+' : '-'} ${item.amount.toFixed(2)}
+      </Text>
+    </TouchableOpacity>
+  </Link>
+);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab Two</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/two.tsx" />
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <TransactionListItem item={item} />}
+        ListEmptyComponent={() => (
+            <View>
+                <Text>No transactions yet.</Text>
+                <Text>Tap the '+' to add one!</Text>
+            </View>
+        )}
+        contentContainerStyle={{ paddingBottom: 80 }}
+      />
     </View>
   );
 }
@@ -29,3 +63,4 @@ const styles = StyleSheet.create({
     width: '80%',
   },
 });
+
