@@ -99,7 +99,7 @@ export default function TransactionModalScreen() {
 
     try {
       if (isEditMode && existingTransaction) {
-        await updateTransaction(existingTransaction.id, transactionData);
+        await updateTransaction(existingTransaction.id, existingTransaction.uid, transactionData);
       } else {
         console.log("Adding new transaction:");
         await addTransaction({...transactionData, sync_status: 'LOCAL_ONLY'});
@@ -128,7 +128,7 @@ export default function TransactionModalScreen() {
     if (!isEditMode || !existingTransaction) return;
     setIsSaving(true);
     try {
-        await deleteTransaction(existingTransaction.id);
+        await deleteTransaction(existingTransaction);
         router.back();
     } catch (error) {
         console.error("Failed to delete transaction:", error);

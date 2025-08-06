@@ -49,9 +49,15 @@ export const useTransactions = (uid: string) => {
     }
   };
 
-  const updateTransaction = async (id: string, updates: Partial<Omit<Transaction, 'id' | 'uid'>>) => {
+  const updateTransaction = async (id: string, uid: string, updates: Omit<Transaction, 'id' | 'uid'>) => {
     try {
       await TransactionService.updateTransaction(id, updates);
+      try {
+        await syncManager.syncTransaction('PUT', {...updates, id: id, uid: uid}, authToken);
+      } catch (error) {
+        console.error('Sync failed:', error); 
+      }
+
       await loadTransactions(); // Refresh the list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update transaction');
@@ -59,9 +65,16 @@ export const useTransactions = (uid: string) => {
     }
   };
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransaction = async (transaction: Transaction) => {
     try {
-      await TransactionService.deleteTransaction(id);
+      await TransactionService.deleteTransaction(transaction.id);
+
+      try {
+        await syncManager.syncTransaction('DELETE', transaction, authToken);
+      } catch (error) {
+        console.error('Sync failed:', error); 
+      }
+
       await loadTransactions(); // Refresh the list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete transaction');

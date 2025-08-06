@@ -7,7 +7,7 @@ export class TransactionService {
     // fetch transactions
     static async getAllTransactions(uid: string): Promise<Transaction[]> {
         const result = await db.getAllAsync<Transaction>(
-            'SELECT * FROM transactions WHERE uid = ? ORDER BY date DESC', [uid]
+            'SELECT * FROM transactions WHERE uid = ? AND deleted_at IS NULL ORDER BY date DESC', [uid]
         );
         return result;
     }
@@ -47,7 +47,7 @@ export class TransactionService {
 
     // delete transaction
     static async deleteTransaction(id: string): Promise<void> {
-        await db.runAsync('DELETE FROM transactions WHERE id = ?', [id]);
+        await db.runAsync('UPDATE transactions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
     }
 
     // update sync status

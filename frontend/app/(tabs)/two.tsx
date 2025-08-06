@@ -7,7 +7,7 @@ import { Transaction } from '@/types/transaction';
 import { useAuth } from '@/contexts/authContext';
 
 export default function TabTwoScreen() {
-  const { user } = useAuth();
+  const { user} = useAuth();
 
   const {loading, error, transactions} = useTransactions(user.uid);
 

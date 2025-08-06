@@ -75,31 +75,31 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
         }
     };
 
-    const updateUserData = async (uid: string) => {
-        try {
-            const docRef = doc(firestore, "users", uid);
-            const docSnap = await getDoc(docRef);
+    // const updateUserData = async (uid: string) => {
+    //     try {
+    //         const docRef = doc(firestore, "users", uid);
+    //         const docSnap = await getDoc(docRef);
 
-            if(docSnap.exists()){
-                const data = docSnap.data();
-                const userData: UserType = {
-                    uid: data?.uid,
-                    email: data.email || null,
-                    name: data.name || null,
-                };
-                setUser({ ...userData });
-            }
-        } catch (error) {
-            console.error("Error updating user data:", error);
-        }
-    };
+    //         if(docSnap.exists()){
+    //             const data = docSnap.data();
+    //             const userData: UserType = {
+    //                 uid: data?.uid,
+    //                 email: data.email || null,
+    //                 name: data.name || null,
+    //             };
+    //             setUser({ ...userData });
+    //         }
+    //     } catch (error) {
+    //         console.error("Error updating user data:", error);
+    //     }
+    // };
 
     const contextValue: AuthContextType = {
         user,
         setUser,
         login,
         register,
-        updateUserData,
+        // updateUserData,
         token
     };
 

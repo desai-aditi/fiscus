@@ -22,14 +22,18 @@ export class syncManager {
         try {
             switch (operation) {
                 case 'POST':
-                    console.log("Syncing MANAGER:", transaction);
                     await APIService.createTransaction(transaction, authToken);
+                    await QueueService.dequeue(transaction.id);
                     break;
             
                 case 'PUT':
+                    await APIService.updateTransaction(transaction, authToken);
+                    await QueueService.dequeue(transaction.id);
                     break;
 
                 case 'DELETE':
+                    await APIService.deleteTransaction(transaction.id, authToken);
+                    await QueueService.dequeue(transaction.id);
                     break;
             }
 
