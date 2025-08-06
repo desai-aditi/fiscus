@@ -17,8 +17,8 @@ export class TransactionService {
         const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`  ;
 
         await db.runAsync(
-            `INSERT INTO transactions (id, type, amount, category, date, description, uid) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [id, transaction.type, transaction.amount, transaction.category, transaction.date, transaction.description || '', transaction.uid]
+            `INSERT INTO transactions (id, type, amount, category, date, description, uid, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, transaction.type, transaction.amount, transaction.category, transaction.date, transaction.description || '', transaction.uid, Date.now(), Date.now()]
         );
         return id;
     }

@@ -41,10 +41,25 @@ export class syncManager {
             console.error("API Error during sync:", apiError);
             await QueueService.enqueue(operation, transaction);
             await TransactionService.updateSyncStatus(transaction.id, 'LOCAL_ONLY');
-
-            console.warn("Network is unavailable, transaction will be queued for later sync.");
             
             throw apiError;
+        }
+    }
+
+    static async batchPush(authToken: string, uid: string): Promise<Transaction[] | void> {
+        try {
+            const pendingItems = await QueueService.getAllQueuedItems(uid);
+
+            for (const item of pendingItems) {
+                try {
+                    await this.syncTransaction(item.operation, item.transaction, authToken)
+                } catch (error) {
+                    await QueueService.markAsFailed(item.transaction.id)
+                }
+            }
+
+        } catch (error) {
+            throw error;
         }
     }
 }

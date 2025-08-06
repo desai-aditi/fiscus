@@ -3,8 +3,8 @@ import { SyncOperation, SyncQueueItem } from "@/types/sync";
 import { Transaction } from "@/types/transaction";
 
 export class QueueService{
-    static async getAllQueuedItems(): Promise<{operation: SyncOperation, transaction: Transaction}[]> {
-        const items = await db.getAllAsync<SyncQueueItem>('SELECT * FROM sync_queue WHERE status = ?', ['PENDING']);
+    static async getAllQueuedItems(uid: string): Promise<{operation: SyncOperation, transaction: Transaction}[]> {
+        const items = await db.getAllAsync<SyncQueueItem>('SELECT * FROM sync_queue WHERE uid = ? AND status = ?', [uid, 'PENDING']);
         return items.map(item => ({
             operation: item.operation as SyncOperation,
             transaction: JSON.parse(item.data) as Transaction,
@@ -44,5 +44,15 @@ export class QueueService{
             );
         }
         
+    }
+
+    static async markAsFailed(transactionId: string): Promise<void> {
+        const transaction = await db.getFirstAsync('SELECT * FROM sync_queue WHERE document_id = ?', [transactionId]);
+        // console.log("Transaction exists in queue:", transaction);
+        if (transaction!== null) {
+            await db.runAsync(
+                'UPDATE sync_queue SET status = FAILED WHERE document_id = ?', [transactionId]
+            );
+        }
     }
 }

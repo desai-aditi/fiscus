@@ -13,9 +13,12 @@ export const initDatabase = async () => {
       amount REAL NOT NULL,
       category TEXT NOT NULL,
       date TEXT NOT NULL,
-      description TEXT,
+      description TEXT DEFAULT '',
       uid TEXT NOT NULL,
-      sync_status TEXT DEFAULT 'LOCAL_ONLY'
+      sync_status TEXT DEFAULT 'LOCAL_ONLY',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER DEFAULT NULL
     );
     
     CREATE INDEX IF NOT EXISTS idx_transactions_uid ON transactions(uid);

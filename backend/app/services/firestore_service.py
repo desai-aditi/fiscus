@@ -17,28 +17,46 @@ async def get_user_transactions(uid: str) -> List[Dict[str, Any]]:
     for doc in docs:
         transaction_data = doc.to_dict()
         transaction_data["id"] = doc.id
+        
+        # Ensure timestamps are integers (in case Firestore stored them as different types)
+        if isinstance(transaction_data.get("created_at"), datetime):
+            transaction_data["created_at"] = int(transaction_data["created_at"].timestamp() * 1000)
+        if isinstance(transaction_data.get("updated_at"), datetime):
+            transaction_data["updated_at"] = int(transaction_data["updated_at"].timestamp() * 1000)
+            
         transactions.append(transaction_data)
     
     return transactions
 
 async def create_transaction(uid: str, transaction_data: Dict[str, Any]) -> Dict[str, Any]:
     """Create a new transaction for a user"""
-    # Add metadata
-    now = datetime.utcnow()
+    now = int(datetime.utcnow().timestamp() * 1000)
+    transaction_id = transaction_data.get("id")
+    
+    if not transaction_id:
+        raise ValueError("Transaction ID is required")
+    
     transaction_doc = {
-        **transaction_data,
+        "type": transaction_data["type"],
+        "amount": transaction_data["amount"],
+        "category": transaction_data["category"],
+        "date": transaction_data["date"],
+        "description": transaction_data.get("description", ""),
         "uid": uid,
         "created_at": now,
-        "updated_at": now
+        "updated_at": now,
+        "deleted_at": None
     }
     
-    # Add to Firestore
-    doc_ref = db.collection("transactions").add(transaction_doc)
-    doc_id = doc_ref[1].id  # doc_ref returns (timestamp, DocumentReference)
+    # Use custom document ID instead of auto-generated
+    doc_ref = db.collection("transactions").document(transaction_id)
+    doc_ref.set(transaction_doc)
     
-    # Return the created transaction with ID
-    transaction_doc["id"] = doc_id
-    return transaction_doc
+    # Return with consistent timestamp format
+    return {
+        **transaction_doc,
+        "id": transaction_id
+    }
 
 async def update_transaction(uid: str, transaction_data: Dict[str, Any]) -> Dict[str, Any]:
     """Update an existing transaction for a user"""
@@ -47,43 +65,48 @@ async def update_transaction(uid: str, transaction_data: Dict[str, Any]) -> Dict
         raise ValueError("Transaction ID is required for update")
 
     # Query for the document with the custom "id" field using new filter syntax
-    query = db.collection("transactions").where("id", "==", transaction_id).where("uid", "==", uid)
-    docs = query.get()
+    doc_ref = db.collection("transactions").document(transaction_id)
+    doc = doc_ref.get()
     
-    # Check if document exists
-    if not docs:
-        raise ValueError(f"Transaction with ID {transaction_id} does not exist for user {uid}")
+    update_data = {
+        "type": transaction_data["type"],
+        "amount": transaction_data["amount"], 
+        "category": transaction_data["category"],
+        "date": transaction_data["date"],
+        "description": transaction_data.get("description", ""),
+        "updated_at": int(datetime.utcnow().timestamp() * 1000)  # Unix timestamp
+    }
     
-    if len(docs) > 1:
-        raise ValueError(f"Multiple transactions found with ID {transaction_id}")
+    doc_ref.update(update_data)
+
+    return {
+        **update_data,
+        "id": transaction_id
+    }
+
+async def remove_transaction(transaction_id: str, uid: str) -> Dict[str, Any]:
+    """Soft delete a transaction for a user"""
+    if not transaction_id:
+        raise ValueError("Transaction ID is required")
     
-    # Get the document reference and current data
-    doc = docs[0]
-    doc_ref = doc.reference
-
-    transaction_data.pop("id", None)  # Remove ID from update data
-    transaction_data["updated_at"] = datetime.now()  # Update timestamp
-
-    doc_ref.update(transaction_data)
-
-    return transaction_data
-
-async def remove_transaction(transaction_id: str, uid: str) -> None:
-    """Delete a transaction for a user"""
-
-    # Query for the document with the custom "id" field using new filter syntax
-    query = db.collection("transactions").where("id", "==", transaction_id).where("uid", "==", uid)
-    docs = query.get()
+    # Get document reference directly using the transaction_id
+    doc_ref = db.collection("transactions").document(transaction_id)
+    doc = doc_ref.get()
     
-    # Check if document exists
-    if not docs:
-        raise ValueError(f"Transaction with ID {transaction_id} does not exist for user {uid}")
+    if not doc.exists:
+        raise ValueError(f"Transaction with ID {transaction_id} does not exist")
     
-    if len(docs) > 1:
-        raise ValueError(f"Multiple transactions found with ID {transaction_id}")
+    # Soft delete with Unix timestamp
+    now = int(datetime.now().timestamp() * 1000)
+    update_data = {
+        "deleted_at": now,
+        "updated_at": now
+    }
     
-    # Delete the document
-    doc = docs[0]
-    doc_ref = doc.reference
-
-    doc_ref.update({ "deleted_at": datetime.now()})
+    doc_ref.update(update_data)
+    
+    # Return updated data
+    return {
+        **update_data,
+        "id": transaction_id
+    }

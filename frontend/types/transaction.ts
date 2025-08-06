@@ -5,8 +5,11 @@ export type Transaction = {
   type: 'expense' | 'income';
   amount: number;
   category: string;
-  date: Date | string;
-  description?: string;
+  date: string;  // Always ISO string for consistency
+  description: string;
   uid: string;
   sync_status: SyncStatus;
+  deleted_at?: number;  // Unix timestamp in milliseconds
+  created_at: number;   // Unix timestamp in milliseconds
+  updated_at: number;   // Unix timestamp in milliseconds
 };

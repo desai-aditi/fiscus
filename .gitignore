@@ -25,3 +25,4 @@ devcontainer/
 service-account.json
 
 frontend/ios/
+frontend/android/

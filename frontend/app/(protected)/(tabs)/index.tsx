@@ -6,9 +6,14 @@ import { useAuth } from '@/contexts/authContext';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Transaction } from '@/types/transaction';
 import { Link } from 'expo-router';
+import { syncManager } from '@/services/syncManager';
 
 export default function TabOneScreen() {
-  const { user } = useAuth();
+  const { token, user } = useAuth();
+
+  const handlePush = async () => {
+    syncManager.batchPush(token, user.uid);
+  };
 
   const {loading, error, transactions} = useTransactions(user.uid);
 
@@ -32,6 +37,8 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
+      {/* <Button title='pull' onPress={() => handlePull()}/> */}
+      <Button title='push' onPress={() => handlePush()}/>
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
