@@ -5,6 +5,20 @@ import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndP
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+export const getCurrentToken = async (): Promise<string | null> => {
+  try {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const token = await currentUser.getIdToken();
+      return token;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching token:", error);
+    return null;
+  }
+};
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
@@ -30,12 +44,12 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
                 console.error("Error fetching token:", error);
             }
             
-            updateUserData(firebaseUser.uid);
-            router.replace("/(tabs)");
+            // updateUserData(firebaseUser.uid);
+            router.replace("/(protected)/(tabs)");
             } else {
             setUser(null);
             setToken(null); // Clear token when user logs out
-            router.replace("/(auth)/login");
+            router.replace("/login");
             }
         });
 

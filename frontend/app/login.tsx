@@ -16,6 +16,10 @@ export default function Login() {
         }
         setIsLoading(true);
         const res = await loginUser(email, password);
+        console.log("Login response:", res);
+        if (res.success) {
+            router.push('/(protected)/(tabs)');
+        }
         setIsLoading(false);
         if (!res.success) {
             Alert.alert('Login', res.msg);

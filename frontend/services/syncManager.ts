@@ -3,8 +3,6 @@ import { Transaction } from "@/types/transaction";
 import { QueueService } from "./queueService";
 import { TransactionService } from "./transactionService";
 import { APIService } from "./apiService";
-import { CurlTestService } from "./curltestservice";
-import { NetworkDebugService } from "./networkDebugService";
 
 export class syncManager {
     private static networkAvailable: boolean = true;

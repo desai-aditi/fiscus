@@ -34,8 +34,6 @@ export const useTransactions = (uid: string) => {
       const id = await TransactionService.addTransaction(transaction);
 
       try {
-        console.log("Syncing transaction:", transaction);
-        console.log('auth token:', authToken);
         await syncManager.syncTransaction('POST', {...transaction, id}, authToken);
       } catch (syncError) {
         console.error('Sync failed:', syncError);

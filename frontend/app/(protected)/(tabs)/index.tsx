@@ -1,13 +1,14 @@
-import { StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-
+import { Button, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { useTransactions } from '@/hooks/useTransactions';
-import { Link, router } from 'expo-router';
-import { Transaction } from '@/types/transaction';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/config/firebase';
 import { useAuth } from '@/contexts/authContext';
+import { useTransactions } from '@/hooks/useTransactions';
+import { Transaction } from '@/types/transaction';
+import { Link } from 'expo-router';
 
-export default function TabTwoScreen() {
-  const { user} = useAuth();
+export default function TabOneScreen() {
+  const { user } = useAuth();
 
   const {loading, error, transactions} = useTransactions(user.uid);
 
@@ -63,4 +64,3 @@ const styles = StyleSheet.create({
     width: '80%',
   },
 });
-
