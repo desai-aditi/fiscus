@@ -3,12 +3,9 @@ import { SyncOperation, SyncQueueItem } from "@/types/sync";
 import { Transaction } from "@/types/transaction";
 
 export class QueueService{
-    static async getAllQueuedItems(uid: string): Promise<{operation: SyncOperation, transaction: Transaction}[]> {
+    static async getAllQueuedItems(uid: string): Promise<SyncQueueItem[]> {
         const items = await db.getAllAsync<SyncQueueItem>('SELECT * FROM sync_queue WHERE uid = ? AND status = ?', [uid, 'PENDING']);
-        return items.map(item => ({
-            operation: item.operation as SyncOperation,
-            transaction: JSON.parse(item.data) as Transaction,
-        }));
+        return items
     }
 
     static async enqueue(operation: SyncOperation, transaction: Transaction): Promise<void> {
@@ -46,13 +43,19 @@ export class QueueService{
         
     }
 
-    static async markAsFailed(transactionId: string): Promise<void> {
-        const transaction = await db.getFirstAsync('SELECT * FROM sync_queue WHERE document_id = ?', [transactionId]);
-        // console.log("Transaction exists in queue:", transaction);
-        if (transaction!== null) {
-            await db.runAsync(
-                'UPDATE sync_queue SET status = FAILED WHERE document_id = ?', [transactionId]
-            );
-        }
+    static async markAllAsProcessed(transactionId: string): Promise<void> {
+        // Remove or mark as processed all queue items for this transaction ID
+        await db.runAsync(
+            'DELETE FROM sync_queue WHERE document_id = ?',
+            [transactionId]
+        );
+    }
+
+        static async markAsFailed(transactionId: string): Promise<void> {
+        // Mark all queue items for this transaction as failed
+        await db.runAsync(
+            'UPDATE sync_queue SET status = ? WHERE document_id = ?',
+            ['FAILED', transactionId]
+        );
     }
 }

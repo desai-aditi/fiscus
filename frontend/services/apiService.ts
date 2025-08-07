@@ -14,6 +14,22 @@ export class APIService{
         return response.data as Transaction[];
     }
 
+    static async fetchUpdatedTransactions(authToken: string, uid: string, lastSyncTimestamp: number): Promise<Transaction[]> {
+        const response = await fetch(`http://192.168.68.63:8000/api/transactions/updated/?last_sync=${lastSyncTimestamp}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch updated transactions');
+        }
+        
+        return response.json();
+    }
+
     static async createTransaction(transaction: Transaction, authToken: string): Promise<void> {
  
         const response = await axios.post('http://192.168.68.63:8000/api/transactions/', transaction, {

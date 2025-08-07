@@ -13,21 +13,21 @@ export const useTransactions = (uid: string) => {
   const [sync, setSync] = useState(false);
 
   const loadTransactions = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await TransactionService.getAllTransactions(uid);
-      setTransactions(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transactions');
-    } finally {
-      setLoading(false);
-    }
-  }, [uid]);
+  try {
+    setLoading(true);
+    setError(null);
+    const data = await TransactionService.getAllTransactions(uid);
+    setTransactions([...data]);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load transactions');
+  } finally {
+    setLoading(false);
+  }
+}, [uid]);
 
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    if (uid) loadTransactions();
+  }, [uid, loadTransactions]);
 
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     try {

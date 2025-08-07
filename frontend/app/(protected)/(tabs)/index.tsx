@@ -1,12 +1,13 @@
-import { Button, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { Button, FlatList, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { useAuth } from '@/contexts/authContext';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Transaction } from '@/types/transaction';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { syncManager } from '@/services/syncManager';
+import { useCallback, useEffect } from 'react';
 
 export default function TabOneScreen() {
   const { token, user } = useAuth();
@@ -15,7 +16,19 @@ export default function TabOneScreen() {
     syncManager.batchPush(token, user.uid);
   };
 
-  const {loading, error, transactions} = useTransactions(user.uid);
+  const handlePull = async () => {
+    syncManager.batchPull(token, user.uid);
+  };
+
+  const params = useLocalSearchParams();
+
+  const {loading, error, transactions, refreshTransactions} = useTransactions(user.uid);
+
+  useFocusEffect(
+  useCallback(() => {
+    refreshTransactions();
+  }, [refreshTransactions])
+);
 
   const TransactionListItem = ({ item }: { item: Transaction }) => (
   <Link 
@@ -38,19 +51,20 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       {/* <Button title='pull' onPress={() => handlePull()}/> */}
-      <Button title='push' onPress={() => handlePush()}/>
-      <FlatList
-        data={transactions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TransactionListItem item={item} />}
-        ListEmptyComponent={() => (
-            <View>
-                <Text>No transactions yet.</Text>
-                <Text>Tap the '+' to add one!</Text>
-            </View>
+      <Button title='Push' onPress={() => handlePush()}/>
+      <Button title='Pull' onPress={() => handlePull()}/>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 80 }}>
+        {transactions.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 40 }}>
+            No transactions yet. Tap the '+' to add one!
+          </Text>
+        ) : (
+          transactions.map((item) => (
+            <TransactionListItem key={item.id} item={item} />
+          ))
         )}
-        contentContainerStyle={{ paddingBottom: 80 }}
-      />
+      </ScrollView>
+      <Button title="Refresh Transactions" onPress={refreshTransactions} />
     </View>
   );
 }

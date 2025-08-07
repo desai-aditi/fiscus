@@ -45,7 +45,7 @@ export default function TransactionModalScreen() {
   const isEditMode = !!existingTransaction;
 
   // Get data mutation functions from our hook
-  const { addTransaction, updateTransaction, deleteTransaction } = useTransactions(user.uid);
+  const { addTransaction, updateTransaction, deleteTransaction, refreshTransactions } = useTransactions(user.uid);
 
   // Form state
   const [amount, setAmount] = useState('');
@@ -100,10 +100,13 @@ export default function TransactionModalScreen() {
     try {
       if (isEditMode && existingTransaction) {
         await updateTransaction(existingTransaction.id, existingTransaction.uid, transactionData);
+        await refreshTransactions();
       } else {
         console.log("Adding new transaction:");
         await addTransaction({...transactionData, sync_status: 'LOCAL_ONLY'});
+        await refreshTransactions();
       }
+      router.setParams({ refreshed: Date.now().toString() });
       router.back();
     } catch (error) {
       console.error("Failed to save transaction:", error);
@@ -129,6 +132,8 @@ export default function TransactionModalScreen() {
     setIsSaving(true);
     try {
         await deleteTransaction(existingTransaction);
+        await refreshTransactions();
+        router.setParams({ refreshed: Date.now().toString() });
         router.back();
     } catch (error) {
         console.error("Failed to delete transaction:", error);

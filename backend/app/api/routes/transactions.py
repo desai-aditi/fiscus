@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Annotated, List
 from app.dependencies import get_current_user
 from app.models.transaction import TransactionResponse, TransactionCreate
-from app.services.firestore_service import get_user_transactions, create_transaction, update_transaction, remove_transaction
+from app.services.firestore_service import get_user_transactions, get_updated_transactions, create_transaction, update_transaction, remove_transaction
 
 router = APIRouter()
 
@@ -16,6 +16,18 @@ async def get_transactions(
         return transactions
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching transactions: {str(e)}")
+
+@router.get("/updated/")
+async def get_updated_transactions_endpoint(
+    user: Annotated[dict, Depends(get_current_user)],
+    last_sync: int = 0,
+):
+    """Get transactions updated after last_sync timestamp"""
+    try:
+        transactions = await get_updated_transactions(user["uid"], last_sync)
+        return transactions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 async def add_transaction(
