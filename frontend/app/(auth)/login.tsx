@@ -1,13 +1,13 @@
 import { useAuth } from '@/contexts/authContext';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login: loginUser } = useAuth();
+    const { login: loginUser, user } = useAuth();
 
     const handleSubmit = async () => {
         if (!email || !password) {
@@ -18,7 +18,12 @@ export default function Login() {
         const res = await loginUser(email, password);
         console.log("Login response:", res);
         if (res.success) {
-            router.push('/(protected)/(tabs)');
+            if (user?.securityMethod == 'faceId') {
+                router.push('/faceId');
+            } else if (user?.securityMethod == 'pin'){
+                router.push('/enterPin')
+            }
+
         }
         setIsLoading(false);
         if (!res.success) {
@@ -28,6 +33,7 @@ export default function Login() {
 
     return (
         <View style={styles.container}>
+
             <View style={styles.form}>
                 <Text style={styles.title}>Login</Text>
                 <Text style={styles.label}>Email</Text>
@@ -52,6 +58,7 @@ export default function Login() {
                 >
                     <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
+                <Link href={"/forgotPassword"}>Forgot Password?</Link>
             </View>
         </View>
     );

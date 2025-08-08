@@ -1,34 +1,38 @@
+import { AuthProvider, useAuth } from '@/contexts/authContext';
 import { Stack } from 'expo-router';
-import { use, useEffect, useState } from 'react';
-
-import { db, initDatabase } from '@/config/database';
-import { useDrizzleStudio } from 'expo-drizzle-studio-plugin/build/useDrizzleStudio';
-import { AuthProvider } from '@/contexts/authContext';
+import React from 'react';
+import { View } from 'react-native';
+import "../global.css"
 
 export default function RootLayout() {
-
-  return <RootLayoutNav />;
+    return (
+        <AuthProvider>
+            <RootLayoutNav />
+        </AuthProvider>
+    )
 }
 
 function RootLayoutNav() {
-  return (
-    <AuthProvider>
-      <Stack>
-        <Stack.Screen
-          name="(protected)"
-          options={{
-            headerShown: false,
-            animation: "none",
-          }}
-        />
-        <Stack.Screen
-          name="login"
-          options={{
-            animation: "none",
-          }}
-        />
+    const { user, needsSecurityVerification} = useAuth();
+    console.log(user);
+
+    return (
+    <Stack>
+        {/* all checks complete, logged in */}
+        <Stack.Protected guard={user !== null && !needsSecurityVerification}>
+            <Stack.Screen name="(tabs)"
+            options={{
+                headerShown: false,
+                animation: "none",
+            }} />
+        </Stack.Protected>
+        
+        {/*  */}
+        <Stack.Protected guard={user == null}>
+            <Stack.Screen name={"(onboarding)"}/>
+        </Stack.Protected>
+        <Stack.Screen name='(auth)/login'/>
       </Stack>
-    </AuthProvider>
     
   );
 }
