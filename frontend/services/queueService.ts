@@ -4,7 +4,7 @@ import { Transaction } from "@/types/transaction";
 
 export class QueueService{
     static async getAllQueuedItems(uid: string): Promise<SyncQueueItem[]> {
-        const items = await db.getAllAsync<SyncQueueItem>('SELECT * FROM sync_queue WHERE uid = ? AND status = ?', [uid, 'PENDING']);
+        const items = await db.getAllAsync<SyncQueueItem>('SELECT * FROM sync_queue WHERE uid = ?', [uid]);
         return items
     }
 

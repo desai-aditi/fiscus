@@ -15,7 +15,7 @@ export class APIService{
     }
 
     static async fetchUpdatedTransactions(authToken: string, uid: string, lastSyncTimestamp: number): Promise<Transaction[]> {
-        const response = await fetch(`http://192.168.68.63:8000/api/transactions/updated/?last_sync=${lastSyncTimestamp}`, {
+        const response = await fetch(`http://localhost:8000/api/transactions/updated/?last_sync=${lastSyncTimestamp}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -32,7 +32,7 @@ export class APIService{
 
     static async createTransaction(transaction: Transaction, authToken: string): Promise<void> {
  
-        const response = await axios.post('http://192.168.68.63:8000/api/transactions/', transaction, {
+        const response = await axios.post('http://localhost:8000/api/transactions/', transaction, {
             headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${authToken}`
@@ -47,7 +47,7 @@ export class APIService{
 
     static async updateTransaction(transaction: Transaction, authToken: string): Promise<void> {
         console.log("Updating transaction:", transaction);
-        const response = await axios.put(`http://192.168.68.63:8000/api/transactions/${transaction.id}/`, transaction, {
+        const response = await axios.put(`http://localhost:8000/api/transactions/${transaction.id}/`, transaction, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authToken}`
@@ -61,7 +61,7 @@ export class APIService{
     }
 
     static async deleteTransaction(transactionId: string, authToken: string): Promise<void> {
-        const response = await axios.delete(`http://192.168.68.63:8000/api/transactions/${transactionId}/`, {
+        const response = await axios.delete(`http://localhost:8000/api/transactions/${transactionId}/`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             },

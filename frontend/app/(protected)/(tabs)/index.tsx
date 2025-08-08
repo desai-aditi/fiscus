@@ -12,16 +12,6 @@ import { useCallback, useEffect } from 'react';
 export default function TabOneScreen() {
   const { token, user } = useAuth();
 
-  const handlePush = async () => {
-    syncManager.batchPush(token, user.uid);
-  };
-
-  const handlePull = async () => {
-    syncManager.batchPull(token, user.uid);
-  };
-
-  const params = useLocalSearchParams();
-
   const {loading, error, transactions, refreshTransactions} = useTransactions(user.uid);
 
   useFocusEffect(
@@ -29,6 +19,17 @@ export default function TabOneScreen() {
     refreshTransactions();
   }, [refreshTransactions])
 );
+
+  const handlePush = async () => {
+    syncManager.batchPush(token, user.uid);
+    refreshTransactions();
+  };
+
+  const handlePull = async () => {
+    syncManager.batchPull(token, user.uid);
+    refreshTransactions();
+
+  };
 
   const TransactionListItem = ({ item }: { item: Transaction }) => (
   <Link 

@@ -92,7 +92,7 @@ export class syncManager {
             console.log(`Last sync was at: ${lastSyncTimestamp}`);
 
             const firestoreTransactions = await APIService.fetchUpdatedTransactions(authToken, uid, lastSyncTimestamp);
-            console.log(`Found ${firestoreTransactions.length} updated transactions`);
+            console.log('pulled:', firestoreTransactions);
 
             const currentSyncTime = Date.now();
             
