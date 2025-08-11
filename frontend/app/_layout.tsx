@@ -1,38 +1,69 @@
 import { AuthProvider, useAuth } from '@/contexts/authContext';
-import { Stack } from 'expo-router';
-import React from 'react';
-import { View } from 'react-native';
-import "../global.css"
+import { Stack, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as Haptics from 'expo-haptics';
 
 export default function RootLayout() {
-    return (
-        <AuthProvider>
-            <RootLayoutNav />
-        </AuthProvider>
-    )
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
 
 function RootLayoutNav() {
-    const { user, needsSecurityVerification} = useAuth();
-    console.log(user);
+  const { user, unlocked, loading } = useAuth();
+  const router = useRouter();
 
-    return (
-    <Stack>
-        {/* all checks complete, logged in */}
-        <Stack.Protected guard={user !== null && !needsSecurityVerification}>
-            <Stack.Screen name="(tabs)"
-            options={{
-                headerShown: false,
-                animation: "none",
-            }} />
-        </Stack.Protected>
-        
-        {/*  */}
-        <Stack.Protected guard={user == null}>
-            <Stack.Screen name={"(onboarding)"}/>
-        </Stack.Protected>
-        <Stack.Screen name='(auth)/login'/>
-      </Stack>
-    
+  useEffect(() => {
+    if (loading) return; // wait until loading done
+
+    if (!user) {
+      router.replace("/(onboarding)");
+      return;
+    }
+
+    if (!user.emailVerified) {
+      router.replace("/(auth)/verifyEmail");
+      return;
+    }
+
+    if (!user.securityMethod) {
+      router.replace("/(auth)/chooseAuthMethod");
+      return;
+    }
+
+    if (!unlocked) {
+      if (user.securityMethod === "pin") {
+        router.replace("/(auth)/pin?mode=enter");
+        return;
+      } 
+      if (user.securityMethod === "faceId") {
+        handleFaceId();
+        return;
+      }
+    }
+
+    // Fully authenticated & unlocked
+    router.replace("/(tabs)/home");
+  }, [user, unlocked, loading, router]);
+
+  const handleFaceId = async () => {
+    const {success} = await LocalAuthentication.authenticateAsync();
+    if (success){
+      router.replace('/(tabs)/home')
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+    }
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* Define all your screens here with exact names */}
+      <Stack.Screen name="(onboarding)" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+    </Stack>
   );
 }

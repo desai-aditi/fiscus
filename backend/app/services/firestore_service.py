@@ -1,7 +1,10 @@
 import firebase_admin
 from firebase_admin import firestore
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import bcrypt
+import random
+from google.cloud.firestore_v1 import DELETE_FIELD
 
 if not firebase_admin._apps:
     firebase_admin.initialize_app()
@@ -140,3 +143,51 @@ async def remove_transaction(transaction_id: str, uid: str) -> Dict[str, Any]:
         **update_data,
         "id": transaction_id
     }
+
+async def store_verification_code(uid: str, code: str):
+    hashed_code = bcrypt.hashpw(code.encode(), bcrypt.gensalt()).decode()
+    expiry_time = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    db.collection("users").document(uid).update({
+        "verification": {
+            "code": hashed_code,
+            "expiresAt": expiry_time
+        }
+    })
+
+async def send_email(email: str, code: str):
+    db.collection("verificationMail").add({
+        "to": email,
+        "message": {
+        "subject": "Thank you for signing up for Fiscus.",
+        "text": "Hi there, below is your verification code. ",
+        "html": code,
+        },
+    })
+
+def get_verification_data(uid: str):
+    doc = db.collection("users").document(uid).get()
+    if not doc.exists:
+        return None
+    doc_data = doc.to_dict() or {}
+    return doc_data.get("verification", {})
+
+async def mark_email_verified(uid: str):
+    db.collection("users").document(uid).update({
+        "emailVerified": True,
+        "verification": DELETE_FIELD
+    })
+
+async def store_user_pin(uid: str, pin: str):
+    hashed_pin = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+    db.collection("users").document(uid).update({
+        "securityMethod": 'pin',
+        "pin": hashed_pin
+    })
+
+def get_user_pin_hash(uid: str) -> str | None:
+    doc = db.collection("users").document(uid).get()
+    if not doc.exists:
+        return None
+    doc_data = doc.to_dict() or {}
+    return doc_data.get("pin")

@@ -1,11 +1,14 @@
 import { auth, firestore } from "@/config/firebase";
 import { AuthContextType, UserType } from "@/types/auth";
-import { 
-  createUserWithEmailAndPassword, 
-  onAuthStateChanged, 
+import axios from "axios";
+import { router } from "expo-router";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  confirmPasswordReset
+  signOut,
+  signInWithCredential,
+  GoogleAuthProvider
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -15,37 +18,43 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserType | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [needsSecurityVerification, setNeedsSecurityVerification] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
+    setLoading(true); // Set loading when auth state changes
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Fetch user doc to get security preferences
-        const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
-        const data = userDoc.exists() ? userDoc.data() : {};
+      try {
+        if (firebaseUser) {
+          // Fetch user doc to get security preferences
+          const userDoc = await getDoc(doc(firestore, "users", firebaseUser.uid));
+          const data = userDoc.exists() ? userDoc.data() : {};
+          console.log('firebase data: ', data);
 
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName || data.name || "",
-          securityMethod: data.securityMethod || null, // 'faceId', 'pin', or null
-          pin: data.pin || null,
-        });
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName || data.name || "",
+            securityMethod: data.securityMethod || null, // 'faceId', 'pin', or null
+            emailVerified: data.emailVerified || false,
+            pin: data.pin || null, 
+          });
 
-        const token = await firebaseUser.getIdToken();
-        setToken(token);
-        
-        // If user has security method, require verification
-        if (data.securityMethod) {
-          setNeedsSecurityVerification(true);
+          const token = await firebaseUser.getIdToken();
+          setToken(token);
+          
+          // Reset unlocked state when user changes
+          setUnlocked(false);
+        } else {
+          setUser(null);
+          setToken(null);
+          setUnlocked(false);
         }
-      } else {
-        setUser(null);
-        setToken(null);
-        setNeedsSecurityVerification(false);
+      } catch (error) {
+        console.error("Error in auth state change:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsub();
@@ -66,15 +75,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string) => {
     try {
       let response = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('register response: ', response)
+      
       await setDoc(doc(firestore, "users", response.user.uid), {
         name,
         email,
         uid: response.user.uid,
-        totalIncome: 0,
-        totalExpense: 0,
         securityMethod: null,
         pin: null,
+        emailVerified: false
       });
+      
       return { success: true };
     } catch (error: any) {
       let msg = error.message;
@@ -85,84 +96,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const setSecurityMethod = async (method: 'faceId' | 'pin', pin?: string) => {
-    if (!user) return { success: false, msg: "No user found" };
-    
-    try {
-      await updateDoc(doc(firestore, "users", user.uid), {
-        securityMethod: method,
-        pin: method === 'pin' ? pin : null,
-      });
-      
-      setUser(prev => prev ? {
-        ...prev,
-        securityMethod: method,
-        pin: method === 'pin' ? pin : null,
-      } : null);
-      
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, msg: error.message };
-    }
-  };
-
-  const verifySecurityMethod = async (input?: string) => {
-    if (!user || !user.securityMethod) return { success: false, msg: "No security method set" };
-    
-    if (user.securityMethod === 'pin') {
-      if (input === user.pin) {
-        setNeedsSecurityVerification(false);
-        return { success: true };
-      } else {
-        return { success: false, msg: "Incorrect PIN" };
+  // Function to set security method (only for Face ID)
+  const setSecurityMethod = async (method: 'faceId') => {
+    if (user) {
+      try {
+        await updateDoc(doc(firestore, "users", user.uid), {
+          securityMethod: method
+        });
+        
+        setUser(prev => prev ? { ...prev, securityMethod: method } : null);
+      } catch (error) {
+        console.error("Error setting security method:", error);
       }
-    } else if (user.securityMethod === 'faceId') {
-      // Handle Face ID verification here (would integrate with biometric library)
-      // For now, just simulate success
-      setNeedsSecurityVerification(false);
-      return { success: true };
-    }
-    
-    return { success: false, msg: "Unknown security method" };
-  };
-
-  const sendPasswordReset = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      return { success: true };
-    } catch (error: any) {
-      let msg = error.message;
-      if (msg.includes("(auth/user-not-found)")) msg = "No account found with this email.";
-      return { success: false, msg };
     }
   };
 
-  const resetPassword = async (oobCode: string, newPassword: string) => {
-    try {
-      await confirmPasswordReset(auth, oobCode, newPassword);
-      return { success: true };
-    } catch (error: any) {
-      let msg = error.message;
-      if (msg.includes("(auth/invalid-action-code)")) msg = "Invalid or expired reset code.";
-      if (msg.includes("(auth/weak-password)")) msg = "Password must be at least 6 characters long.";
-      return { success: false, msg };
-    }
+  // logout function
+  const logout = async () => {
+    await signOut(auth);
+    setUnlocked(false);
+    router.replace('/(onboarding)')
+  };
+
+  // unlock app (after FaceID or PIN success)
+  const unlock = () => {
+    setUnlocked(true);
   };
 
   const contextValue: AuthContextType = {
     user,
     setUser,
     login,
+    logout,
     register,
     token,
-    needsSecurityVerification,
-    setSecurityMethod,
-    verifySecurityMethod,
-    sendPasswordReset,
-    resetPassword,
+    unlocked,
+    unlock,
+    loading,
+    setSecurityMethod
   };
 
-  if (loading) return null; // or splash screen
+  // Don't render children until we know the auth state
+  if (loading) {
+    return null; // or your splash screen component
+  }
 
   return (
     <AuthContext.Provider value={contextValue}>

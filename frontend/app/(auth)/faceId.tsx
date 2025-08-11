@@ -6,7 +6,7 @@ export default function FaceID() {
   return (
     <View>
         <Text>Face id</Text>
-        <Link href="/(tabs)">Home!</Link>
+        <Link href="/(tabs)/home">Home!</Link>
     </View>
   );
 }

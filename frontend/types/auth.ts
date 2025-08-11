@@ -1,21 +1,21 @@
-// types/auth.ts
 export interface UserType {
   uid: string;
   email: string | null;
   name: string;
-  securityMethod: 'faceId' | 'pin' | null;
+  securityMethod: 'pin' | 'faceId' | null;
+  emailVerified: boolean;
   pin: string | null;
 }
 
 export interface AuthContextType {
   user: UserType | null;
-  setUser: (user: UserType | null) => void;
+  setUser: React.Dispatch<React.SetStateAction<UserType | null>>;
   login: (email: string, password: string) => Promise<{ success: boolean; msg?: string }>;
+  logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<{ success: boolean; msg?: string }>;
   token: string | null;
-  needsSecurityVerification: boolean;
-  setSecurityMethod: (method: 'faceId' | 'pin', pin?: string) => Promise<{ success: boolean; msg?: string }>;
-  verifySecurityMethod: (input?: string) => Promise<{ success: boolean; msg?: string }>;
-  sendPasswordReset: (email: string) => Promise<{ success: boolean; msg?: string }>;
-  resetPassword: (oobCode: string, newPassword: string) => Promise<{ success: boolean; msg?: string }>;
+  unlocked: boolean;
+  unlock: () => void;
+  loading: boolean;
+  setSecurityMethod: (method: 'faceId') => Promise<void>;
 }
