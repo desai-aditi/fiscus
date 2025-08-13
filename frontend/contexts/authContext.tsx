@@ -1,14 +1,13 @@
 import { auth, firestore } from "@/config/firebase";
 import { AuthContextType, UserType } from "@/types/auth";
-import axios from "axios";
 import { router } from "expo-router";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  signInWithCredential,
-  GoogleAuthProvider
+  sendPasswordResetEmail,
+  updatePassword
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -123,6 +122,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUnlocked(true);
   };
 
+  const lock = () => {
+    setUnlocked(false);
+  };
+
   const contextValue: AuthContextType = {
     user,
     setUser,
@@ -132,8 +135,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     token,
     unlocked,
     unlock,
+    lock,
     loading,
-    setSecurityMethod
+    setSecurityMethod,
   };
 
   // Don't render children until we know the auth state

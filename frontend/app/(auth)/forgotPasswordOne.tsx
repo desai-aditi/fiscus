@@ -1,5 +1,5 @@
 import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, router } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import BackButton from '@/components/BackButton';
@@ -10,8 +10,23 @@ import Feather from '@expo/vector-icons/Feather';
 import { colors } from '@/constants/theme';
 import Button from '@/components/Button';
 import { radius } from '@/constants/scaling';
+import { APIService } from '@/services/apiService';
 
 export default function ForgotPasswordOne() {
+  const emailRef = useRef("");
+
+  const handleSubmit = async () => {
+    try {
+      await APIService.sendResetCode(emailRef.current)
+      router.push({
+        pathname: '/(auth)/forgotPasswordTwo',
+        params: { email: emailRef.current }
+      });
+    } catch (error) {
+      console.error('unable to reset password at this time')
+    }
+  }
+
   return (
     <ScreenWrapper style={{ paddingTop: verticalScale(75), paddingHorizontal: 0 }}>
       <BackButton style={{ marginLeft: scale(20)}}/>
@@ -28,8 +43,8 @@ export default function ForgotPasswordOne() {
         </View>
 
         <View style={styles.formContainer}>
-          <Input label='Email' icon={<Feather name="mail" size={20} color={colors.neutral900}/>} placeholder='kylo.ren@gmail.com' />
-          <Button style={{backgroundColor: colors.primary}} onPress={() => router.push('/(auth)/forgotPasswordTwo')}>
+          <Input autoCapitalize='none' onChangeText={(value) => (emailRef.current = value)} label='Email' icon={<Feather name="mail" size={20} color={colors.neutral900}/>} placeholder='kylo.ren@gmail.com' />
+          <Button style={{backgroundColor: colors.primary}} onPress={() => handleSubmit()}>
             <Typo color={colors.white} size={16}>Send recovery email</Typo>
           </Button>
 

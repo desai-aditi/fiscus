@@ -16,6 +16,7 @@ export interface AuthContextType {
   token: string | null;
   unlocked: boolean;
   unlock: () => void;
+  lock: () => void;
   loading: boolean;
   setSecurityMethod: (method: 'faceId') => Promise<void>;
 }

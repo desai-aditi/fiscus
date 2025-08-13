@@ -1,18 +1,66 @@
 import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
-import React from 'react';
-import { Link, router } from 'expo-router';
+import React, { useRef } from 'react';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import ScreenWrapper from '@/components/ScreenWrapper';
 import BackButton from '@/components/BackButton';
 import { scale, verticalScale } from '@/utils/styling';
 import Input from '@/components/Input';
 import Typo from '@/components/Typo';
-import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import { colors } from '@/constants/theme';
 import Button from '@/components/Button';
 import { radius } from '@/constants/scaling';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { APIService } from '@/services/apiService';
+import { useAuth } from '@/contexts/authContext';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as Haptics from 'expo-haptics';
 
 export default function ForgotPasswordThree() {
+  const {user} = useAuth();
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [password, setPassword] = useState(""); // Use useState instead of useRef
+  
+  useEffect(() => {
+    const getResetToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('resetToken');
+        setResetToken(token);
+      } catch (error) {
+        console.error('Failed to get reset token');
+      }
+    };
+    getResetToken();
+  }, []);
+
+  const handleFaceId = async () => {
+      const {success} = await LocalAuthentication.authenticateAsync();
+      if (success){
+        router.replace('/(tabs)/home')
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      }
+    }
+
+  const handleSubmit = async () => {
+    if (!resetToken || !password.trim()) {
+      console.error('Missing token or password');
+      return;
+    }
+    
+    try {
+      const result = await APIService.resetPassword(resetToken, password);
+      if (result.success) {
+        // Clean up the stored token
+        await AsyncStorage.removeItem('resetToken');
+        router.replace('/(tabs)/home')
+      }
+    } catch (error) {
+      console.error('unable to reset password at this time', error);
+    }
+  }
+
   return (
     <ScreenWrapper style={{ paddingTop: verticalScale(75), paddingHorizontal: 0 }}>
       <BackButton style={{ marginLeft: scale(20)}}/>
@@ -29,8 +77,8 @@ export default function ForgotPasswordThree() {
         </View>
 
         <View style={styles.formContainer}>
-          <Input secureTextEntry label='Set new password' icon={<FontAwesome name="lock" size={20} color={colors.neutral900}/>} placeholder='********'/>
-          <Button style={{backgroundColor: colors.primary}} onPress={() => router.push('/(tabs)/home')}>
+          <Input onChangeText={setPassword} secureTextEntry label='Set new password' icon={<FontAwesome name="lock" size={20} color={colors.neutral900}/>} placeholder='********'/>
+          <Button style={{backgroundColor: colors.primary}} onPress={() => handleSubmit()}>
             <Typo color={colors.white} size={16}>Reset password</Typo>
           </Button>
 
