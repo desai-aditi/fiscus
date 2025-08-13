@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.desai-aditi.fiscus",
+      "bundleIdentifier": "com.aditidesai.fiscus",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -36,7 +36,11 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-background-task"
+      "expo-background-task",
+      ["expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Fiscus to use Face ID."
+        }]
     ],
     "experiments": {
       "typedRoutes": true

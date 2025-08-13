@@ -1,7 +1,11 @@
 import firebase_admin
 from firebase_admin import firestore
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import bcrypt
+import random
+from google.cloud.firestore_v1 import DELETE_FIELD
+from firebase_admin import auth
 
 if not firebase_admin._apps:
     firebase_admin.initialize_app()
@@ -140,3 +144,77 @@ async def remove_transaction(transaction_id: str, uid: str) -> Dict[str, Any]:
         **update_data,
         "id": transaction_id
     }
+
+async def store_code(uid: str, code: str, mode: str = "verification"):
+    hashed_code = bcrypt.hashpw(code.encode(), bcrypt.gensalt()).decode()
+    expiry_time = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    field_name = "verification" if mode == "verification" else "resetPassword"
+
+    db.collection("users").document(uid).update({
+        field_name: {
+            "code": hashed_code,
+            "expiresAt": expiry_time
+        }
+    })
+
+def get_code_data(uid: str, mode: str = "verification"):
+    doc = db.collection("users").document(uid).get()
+    if not doc.exists:
+        return None
+    doc_data = doc.to_dict() or {}
+
+    field_name = "verification" if mode == "verification" else "resetPassword"
+    return doc_data.get(field_name, None)
+
+async def delete_code_field(uid: str, mode: str = "verification"):
+    field_name = "verification" if mode == "verification" else "resetPassword"
+    db.collection("users").document(uid).update({
+        field_name: DELETE_FIELD
+    })
+
+async def set_new_password(uid: str, newPassword: str):
+    auth.update_user(uid, password=newPassword)
+
+async def send_email(email: str, code: str):
+    db.collection("verificationMail").add({
+        "to": email,
+        "message": {
+        "subject": "Thank you for signing up for Fiscus.",
+        "text": "Hi there, below is your verification code. ",
+        "html": code,
+        },
+    })
+
+async def mark_email_verified(uid: str):
+    db.collection("users").document(uid).update({
+        "emailVerified": True,
+    })
+
+async def store_user_pin(uid: str, pin: str):
+    hashed_pin = bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
+    db.collection("users").document(uid).update({
+        "securityMethod": 'pin',
+        "pin": hashed_pin
+    })
+
+def get_user_pin_hash(uid: str) -> str | None:
+    doc = db.collection("users").document(uid).get()
+    if not doc.exists:
+        return None
+    doc_data = doc.to_dict() or {}
+    return doc_data.get("pin")
+
+def get_user_by_email(email: str) -> str | None:
+    """Get user data by email address"""
+    try:
+        # First try to get user from Firebase Auth
+        try:
+            user_record = auth.get_user_by_email(email)
+            return user_record.uid
+        except auth.UserNotFoundError:
+            return None
+            
+    except Exception as e:
+        print(f"Error getting user by email: {str(e)}")
+        return None

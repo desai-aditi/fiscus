@@ -3,11 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 import firebase_admin
 from app.config import get_settings
 from app.api.routes import transactions
+from app.api.routes import verification
 
 app = FastAPI(title="Fiscus API")
 
 # Include routers
 app.include_router(transactions.router, prefix="/api/transactions")
+app.include_router(verification.router, prefix="/api/verification")
 
 # CORS
 settings = get_settings()
