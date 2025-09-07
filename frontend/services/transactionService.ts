@@ -23,7 +23,7 @@ export class TransactionService {
     // add transaction
     static async addTransactionWithId(transaction: Transaction): Promise<void> {
         await db.runAsync(
-            `INSERT INTO transactions (id, type, amount, category, date, description, uid, created_at, updated_at, deleted_at, sync_status) 
+            `INSERT INTO transactions (id, type, amount, category, date, description, uid, updated_at, deleted_at, sync_status) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
             transaction.id, // Use the existing ID from Firestore
@@ -41,11 +41,11 @@ export class TransactionService {
     }
 
     static async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<string> {
-        const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`  ;
+        const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
         await db.runAsync(
-            `INSERT INTO transactions (id, type, amount, category, date, description, uid, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, transaction.type, transaction.amount, transaction.category, transaction.date, transaction.description || '', transaction.uid, Date.now(), Date.now()]
+            `INSERT INTO transactions (id, type, amount, merchant, place, category, date, description, uid, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, transaction.type, transaction.amount, transaction.merchant, transaction.place, transaction.category, transaction.date, transaction.description || '', transaction.uid, Date.now()]
         );
         return id;
     }

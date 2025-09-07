@@ -15,7 +15,7 @@ export const colors = {
   neutral100: "#F5F3F0",        // Slightly deeper off-white
   neutral200: "#ECECEC",        // Kept from original
   neutral300: "#D9D6D1",        // Warm pale neutral
-  neutral400: "#5b5b5b",        // Kept from original
+  neutral400: "#A2A2A2",        // Kept from original
   neutral500: "#6E6B67",        // Warm medium-dark neutral
   neutral600: "#504E4B",        // Warm dark neutral
   neutral700: "#383838",        // Kept from original

@@ -9,16 +9,16 @@ import { colors } from '@/constants/theme';
 export default function Input(props: InputProps) {
   return (
     <View style={styles.container}>
-        <Typo size={14} color={colors.neutral800}>{props.label}</Typo>
-        <View style={[styles.inputContainer, props.containerStyle && props.containerStyle]}>
-            {props.icon && props.icon}
-            <TextInput
-                style={[styles.input, props.inputStyle]}
-                placeholderTextColor={colors.neutral400}
-                ref={props.inputRef && props.inputRef}
-                {...props}
-            />
-        </View>
+      <Typo size={14} color={colors.neutral500}>{props.label}</Typo>
+      <View style={[styles.inputContainer, props.containerStyle && props.containerStyle]}>
+        {props.icon && props.icon}
+        <TextInput
+          style={[styles.input, props.inputStyle]}
+          placeholderTextColor={colors.neutral400}
+          ref={props.inputRef && props.inputRef}
+          {...props}
+        />
+      </View>
     </View>
   );
 }
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: verticalScale(14),
+    fontSize: scale(16),
     color: colors.black,
   },
 });

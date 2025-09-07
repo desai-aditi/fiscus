@@ -1,0 +1,16 @@
+[
+  { "label": "🛒 Groceries", "value": "groceries", "icon": "🛒", "bgColor": "#FFF4B5", "type": "expense" },
+  { "label": "🥗 Restaurants", "value": "restaurants", "icon": "🥗", "bgColor": "#FFD1C1", "type": "expense" },
+  { "label": "🚗 Transport", "value": "transport", "icon": "🚗", "bgColor": "#C7E7FF", "type": "expense" },
+  { "label": "🏠 Rent", "value": "rent", "icon": "🏠", "bgColor": "#BFE7E0", "type": "expense" },
+  { "label": "💡 Utilities", "value": "utilities", "icon": "💡", "bgColor": "#FFE2B3", "type": "expense" },
+  { "label": "🎉 Entertainment", "value": "entertainment", "icon": "🎉", "bgColor": "#E3D4F9", "type": "expense" },
+  { "label": "🎓 Education", "value": "education", "icon": "🎓", "bgColor": "#C5DFF5", "type": "expense" },
+  { "label": "💼 Work", "value": "work", "icon": "💼", "bgColor": "#D6D9DE", "type": "expense" },
+  { "label": "💊 Health", "value": "health", "icon": "💊", "bgColor": "#FFC9C9", "type": "expense" },
+  { "label": "✈️ Travel", "value": "travel", "icon": "✈️", "bgColor": "#B9F2F2", "type": "expense" },
+  { "label": "💵 Savings", "value": "savings", "icon": "💵", "bgColor": "#C6F6C6", "type": "expense" },
+  { "label": "💰 Salary", "value": "salary", "icon": "💰", "bgColor": "#D4F1BE", "type": "income" },
+  { "label": "📈 Investments", "value": "investments", "icon": "📈", "bgColor": "#B8E3FF", "type": "income" },
+  { "label": "🎁 Gifts", "value": "gifts", "icon": "🎁", "bgColor": "#FFD6E0", "type": "income" }
+]

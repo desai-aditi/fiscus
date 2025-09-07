@@ -1,3 +1,4 @@
+import { initDatabase, seedUserCategories } from "@/config/database";
 import { auth, firestore } from "@/config/firebase";
 import { AuthContextType, UserType } from "@/types/auth";
 import { router } from "expo-router";
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       }
     });
-
+ 
     return () => unsub();
   }, []);
 
@@ -84,6 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         pin: null,
         emailVerified: false
       });
+
+      // await initDatabase();
+      // await seedUserCategories(response.user.uid);
       
       return { success: true };
     } catch (error: any) {
