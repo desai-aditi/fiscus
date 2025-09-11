@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { colors } from "@/constants/theme";
-import { db, initDatabase, seededUserCategories, seedUserCategories } from "@/config/database";
+import { db, initDatabase, seededUserCategories, seedUserAccounts, seedUserCategories } from "@/config/database";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin/build/useDrizzleStudio";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import { scale, verticalScale } from "@/utils/styling";
@@ -23,6 +23,7 @@ export default function TabsLayout() {
         try {
           await initDatabase();
           await seedUserCategories(user?.uid);    
+          await seedUserAccounts(user?.uid);    
           setDbInitialized(true);
         } catch (error) {
           setDbError(error instanceof Error ? error.message : 'Failed to initialize database');

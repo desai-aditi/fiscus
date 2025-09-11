@@ -1,0 +1,16 @@
+{
+  "defaultAccounts": [
+    {
+      "name": "Cash",
+      "color": "hsl(152, 75%, 40%)"
+    },
+    {
+      "name": "Credit Card",
+      "color": "hsl(344, 75%, 40%)"
+    },
+    {
+      "name": "Bank Account",
+      "color": "hsl(211, 75%, 40%)"
+    }
+  ]
+}

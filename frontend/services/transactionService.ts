@@ -23,19 +23,24 @@ export class TransactionService {
     // add transaction
     static async addTransactionWithId(transaction: Transaction): Promise<void> {
         await db.runAsync(
-            `INSERT INTO transactions (id, type, amount, category, date, description, uid, updated_at, deleted_at, sync_status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO transactions (
+                id, type, amount, category, account, merchant, tags,
+                date, description, uid, updated_at, deleted_at, sync_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-            transaction.id, // Use the existing ID from Firestore
-            transaction.type,
-            transaction.amount,
-            transaction.category,
-            transaction.date,
-            transaction.description || '',
-            transaction.uid,
-            transaction.updated_at,
-            transaction.deleted_at || null,
-            'SYNCED' // Mark as synced since it came from remote
+                transaction.id, // Use the existing ID from Firestore
+                transaction.type,
+                transaction.amount,
+                transaction.category,
+                transaction.account,
+                transaction.merchant || null,
+                transaction.tags || '[]',
+                transaction.date,
+                transaction.description || '',
+                transaction.uid,
+                transaction.updated_at,
+                transaction.deleted_at || null,
+                'SYNCED' // Mark as synced since it came from remote
             ]
         );
     }
@@ -44,8 +49,24 @@ export class TransactionService {
         const id = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
         await db.runAsync(
-            `INSERT INTO transactions (id, type, amount, merchant, place, category, date, description, uid, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, transaction.type, transaction.amount, transaction.merchant, transaction.place, transaction.category, transaction.date, transaction.description || '', transaction.uid, Date.now()]
+            `INSERT INTO transactions (
+                id, type, amount, category, account, merchant, tags,
+                date, description, uid, updated_at, sync_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                id,
+                transaction.type,
+                transaction.amount,
+                transaction.category,
+                transaction.account,
+                transaction.merchant || null,
+                transaction.tags || '[]',
+                transaction.date,
+                transaction.description || '',
+                transaction.uid,
+                Date.now(),
+                'LOCAL_ONLY'
+            ]
         );
         return id;
     }

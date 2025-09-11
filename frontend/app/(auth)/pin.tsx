@@ -30,38 +30,41 @@ export default function PinScreen() {
       return;
     }
 
-    try {
-      let res;
+    // try {
+    //   let res;
       
-      if (mode === 'set') {
-        res = await APIService.setPin(token, pin);
-      } else {
-        res = await APIService.verifyPin(token, pin);
-      }
+    //   if (mode === 'set') {
+    //     res = await APIService.setPin(token, pin);
+    //   } else {
+    //     res = await APIService.verifyPin(token, pin);
+    //   }
 
-      if (res.success) {
-        if (mode === 'set') {
-          // After setting PIN, user might need to enter it or go to next step
-          // You can either unlock immediately or redirect to enter PIN
-          unlock();
-          router.push('/(tabs)/home');
-        } else {
-          // After verifying PIN, unlock the app
-          unlock();
-          router.push('/(tabs)/home');
-        }
-      } else {
-        Alert.alert(
-          mode === 'set' ? 'Set PIN' : 'Enter PIN', 
-          res.message || `${mode === 'set' ? 'Setting' : 'Verifying'} PIN failed.`
-        );
-      }
-    } catch (e: any) {
-      Alert.alert(
-        'Error', 
-        e.message || `${mode === 'set' ? 'Setting' : 'Verifying'} PIN failed due to a network or server error.`
-      );
-    }
+    //   if (res.success) {
+    //     if (mode === 'set') {
+    //       // After setting PIN, user might need to enter it or go to next step
+    //       // You can either unlock immediately or redirect to enter PIN
+    //       unlock();
+    //       router.push('/(tabs)/home');
+    //     } else {
+    //       // After verifying PIN, unlock the app
+    //       unlock();
+    //       router.push('/(tabs)/home');
+    //     }
+    //   } else {
+    //     Alert.alert(
+    //       mode === 'set' ? 'Set PIN' : 'Enter PIN', 
+    //       res.message || `${mode === 'set' ? 'Setting' : 'Verifying'} PIN failed.`
+    //     );
+    //   }
+    // } catch (e: any) {
+    //   Alert.alert(
+    //     'Error', 
+    //     e.message || `${mode === 'set' ? 'Setting' : 'Verifying'} PIN failed due to a network or server error.`
+    //   );
+    // }
+
+    unlock();
+    router.push('/(tabs)/home');
   };
 
   const getContent = () => {
